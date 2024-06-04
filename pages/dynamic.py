@@ -87,13 +87,13 @@ class Memory:
                 i += 1
 
 
-class MemoryManagerGUI:
+class MemoryManagerGUIDynamic:
     def __init__(self, root):
         self.root = root
-        self.root.title("Memory Management Simulator")
+        self.root.title("Memory Management Simulator - Dynamic")
 
         self.total_size_label = tk.Label(root, text="Total Memory Size:")
-        self.total_size_label.pack()
+        self.total_size_label.pack(pady=(20,0))
         self.total_size_entry = tk.Entry(root)
         self.total_size_entry.pack()
 
@@ -182,5 +182,6 @@ class MemoryManagerGUI:
 
 if __name__ == "__main__":
     root = tk.Tk()
-    app = MemoryManagerGUI(root)
+    root.geometry("400x400")
+    app = MemoryManagerGUIDynamic(root)
     app.run()
