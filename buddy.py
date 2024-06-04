@@ -1,150 +1,115 @@
 import tkinter as tk
-from tkinter import messagebox
+from tkinter import ttk
+import math
 
+class BuddySystem:
+    def __init__(self, total_memory):
+        self.total_memory = total_memory
+        self.allocated_blocks = {}
+        self.free_blocks = {total_memory: [0]}
 
-class Process:
-    def __init__(self, pid, size):
-        self.pid = pid
-        self.size = size
+    def allocate(self, process_id, size):
+        # Find the smallest block size that can accommodate the requested size
+        block_size = min((s for s in self.free_blocks if s >= size), default=None)
+        if block_size is None:
+                return "Error: Not enough memory."
 
+        # Remove the block from the free blocks
+        address = self.free_blocks[block_size].pop()
+        if not self.free_blocks[block_size]:
+            del self.free_blocks[block_size]
 
-class MemoryBlock:
-    def __init__(self, size, start_address):
-        self.size = size
-        self.start_address = start_address
-        self.end_address = start_address + size - 1
-        self.is_allocated = False
-        self.left_child = None
-        self.right_child = None
-        self.parent = None
+        # Split the block until the block size is equal to the requested size
+        while block_size > 2 * size:
+            block_size //= 2
+            if block_size not in self.free_blocks:
+                self.free_blocks[block_size] = []
+            self.free_blocks[block_size].append(address + block_size)
 
+        # Allocate the block to the process
+        self.allocated_blocks[process_id] = (address, size)
+        return f"Allocated {size} memory to process {process_id}."
+    
+    def deallocate(self, process_id):
+        if process_id not in self.allocated_blocks:
+            return "Error: Process not found."
+        address, size = self.allocated_blocks.pop(process_id)
+        if size not in self.free_blocks:
+            self.free_blocks[size] = []
+        self.free_blocks[size].append(address)
+        return f"Deallocated memory from process {process_id}."
 
-class MemoryManager:
-    def __init__(self, total_size):
-        self.total_size = total_size
-        self.root_block = MemoryBlock(total_size, 0)
+    def get_free_blocks(self):
+        return self.free_blocks
 
-    def allocate_memory(self, process_size):
-        block = self._find_block(self.root_block, process_size)
-        if block:
-            print("Found block:", block.start_address, block.size)  # Debugging print statement
-            self._split_block(block, process_size)
-            block.is_allocated = True
-            return block.start_address
-        else:
-            print("No suitable block found")  # Debugging print statement
-            return -1
+    def get_allocated_blocks(self):
+        return self.allocated_blocks
 
-    def deallocate_memory(self, start_address):
-        block = self._find_block_by_address(self.root_block, start_address)
-        if block:
-            block.is_allocated = False
-            self._merge_block(block)
+class Application(tk.Tk):
+    def __init__(self):
+        super().__init__()
+        self.title("Buddy System Memory Management")
+        self.buddy_system = None
+        self.create_widgets()
 
-    def _find_block(self, node, process_size):
-        if node.is_allocated or node.size < process_size:
-            return None
-        if node.size == process_size:
-            return node
-        left_block = self._find_block(node.left_child, process_size)
-        if left_block:
-            return left_block
-        return self._find_block(node.right_child, process_size)
+    def create_widgets(self):
+        self.memory_label = ttk.Label(self, text="Total Memory:")
+        self.memory_label.grid(column=0, row=0)
+        self.memory_entry = ttk.Entry(self)
+        self.memory_entry.grid(column=1, row=0)
+        self.memory_button = ttk.Button(self, text="Set Memory", command=self.set_memory)
+        self.memory_button.grid(column=2, row=0)
 
-    def _split_block(self, block, process_size):
-        while block.size > process_size:
-            block.left_child = MemoryBlock(block.size // 2, block.start_address)
-            block.right_child = MemoryBlock(block.size // 2, block.start_address + block.size // 2)
-            block.left_child.parent = block
-            block.right_child.parent = block
-            block.right_child.start_address = block.start_address + block.size // 2  # Fix
-            block = block.left_child if process_size <= block.size // 2 else block.right_child
+        self.process_label = ttk.Label(self, text="Process ID:")
+        self.process_label.grid(column=0, row=1)
+        self.process_entry = ttk.Entry(self)
+        self.process_entry.grid(column=1, row=1)
 
-    def _merge_block(self, block):
-        while block.parent and not block.parent.left_child.is_allocated and not block.parent.right_child.is_allocated:
-            block.parent.left_child = None
-            block.parent.right_child = None
-            block = block.parent
-    def _find_block(self, node, process_size):
-        if node is None:
-            return None
-        if node.is_allocated or node.size < process_size:
-            return None
-        if node.size == process_size:
-            return node
-        left_block = None
-        right_block = None
-        if node.left_child:
-            left_block = self._find_block(node.left_child, process_size)
-        if node.right_child:
-            right_block = self._find_block(node.right_child, process_size)
-        return left_block if left_block else right_block
+        self.size_label = ttk.Label(self, text="Size:")
+        self.size_label.grid(column=0, row=2)
+        self.size_entry = ttk.Entry(self)
+        self.size_entry.grid(column=1, row=2)
 
+        self.allocate_button = ttk.Button(self, text="Allocate", command=self.allocate_memory)
+        self.allocate_button.grid(column=2, row=1)
+        self.deallocate_button = ttk.Button(self, text="Deallocate", command=self.deallocate_memory)
+        self.deallocate_button.grid(column=2, row=2)
 
+        self.message_label = ttk.Label(self, text="")
+        self.message_label.grid(column=0, row=3, columnspan=3)
 
-
-class MemoryManagerGUI:
-    def __init__(self, root):
-        self.root = root
-        self.root.title("Memory Management Simulator")
-
-        self.total_size_label = tk.Label(root, text="Total Memory Size:")
-        self.total_size_label.pack()
-        self.total_size_entry = tk.Entry(root)
-        self.total_size_entry.pack()
-
-        self.set_memory_button = tk.Button(root, text="Set Memory", command=self.set_memory)
-        self.set_memory_button.pack()
-
-        self.process_size_label = tk.Label(root, text="Process Size:")
-        self.process_size_label.pack()
-        self.process_size_entry = tk.Entry(root)
-        self.process_size_entry.pack()
-        self.add_process_button = tk.Button(root, text="Allocate Memory", command=self.add_process)
-        self.add_process_button.pack()
-        self.remove_process_button = tk.Button(root, text="Deallocate Memory", command=self.remove_process)
-        self.remove_process_button.pack()
-
-        self.memory_manager = None
+        self.memory_text = tk.Text(self)
+        self.memory_text.grid(column=0, row=4, columnspan=3)
 
     def set_memory(self):
-        try:
-            total_size = int(self.total_size_entry.get())
-            self.memory_manager = MemoryManager(total_size)
-            messagebox.showinfo("Memory Set", f"Memory set successfully with total size {total_size}.")
-        except ValueError:
-            messagebox.showerror("Invalid Input", "Please enter a valid integer for total memory size.")
+        total_memory = int(self.memory_entry.get())
+        self.buddy_system = BuddySystem(total_memory)
+        self.message_label.config(text=f"Total memory set to {total_memory}.")
 
-    def add_process(self):
-        if self.memory_manager:
-            try:
-                size = int(self.process_size_entry.get())
-                start_address = self.memory_manager.allocate_memory(size)
-                if start_address != -1:
-                    messagebox.showinfo("Memory Allocated", f"Memory allocated at address {start_address}.")
-                else:
-                    messagebox.showwarning("Memory Full", "Not enough memory to allocate for the process.")
-            except ValueError:
-                messagebox.showerror("Invalid Input", "Please enter a valid integer for process size.")
-        else:
-            messagebox.showerror("No Memory Set", "Please set the total memory size first.")
+    def allocate_memory(self):
+        process_id = self.process_entry.get()
+        size = int(self.size_entry.get())
+        message = self.buddy_system.allocate(process_id, size)
+        self.message_label.config(text=message)
+        self.update_memory_text()
 
-    def remove_process(self):
-        if self.memory_manager:
-            try:
-                start_address = int(self.process_size_entry.get())
-                self.memory_manager.deallocate_memory(start_address)
-                messagebox.showinfo("Memory Deallocated", "Memory deallocated successfully.")
-            except ValueError:
-                messagebox.showerror("Invalid Input", "Please enter a valid integer for memory address.")
-        else:
-            messagebox.showerror("No Memory Set", "Please set the total memory size first.")
+    def deallocate_memory(self):
+        process_id = self.process_entry.get()
+        message = self.buddy_system.deallocate(process_id)
+        self.message_label.config(text=message)
+        self.update_memory_text()
 
-    def run(self):
-        self.root.mainloop()
-
+    def update_memory_text(self):
+        self.memory_text.delete(1.0, tk.END)
+        free_blocks = self.buddy_system.get_free_blocks()
+        allocated_blocks = self.buddy_system.get_allocated_blocks()
+        self.memory_text.insert(tk.END, "Free Blocks:\n")
+        for size, addresses in sorted(free_blocks.items(), key=lambda x: x[1]):
+            self.memory_text.insert(tk.END, f"Size {size}: {sorted(addresses)}\n")
+        self.memory_text.insert(tk.END, "\nAllocated Blocks:\n")
+        for process_id, (address, size) in sorted(allocated_blocks.items(), key=lambda x: x[1][0]):
+            self.memory_text.insert(tk.END, f"Process {process_id}: Address {address}, Size {size}\n")
 
 if __name__ == "__main__":
-    root = tk.Tk()
-    app = MemoryManagerGUI(root)
-    app.run()
+    app = Application()
+    app.mainloop()

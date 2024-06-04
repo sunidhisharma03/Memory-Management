@@ -1,6 +1,6 @@
 import tkinter as tk
 from tkinter import messagebox
-import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt # type: ignore
 
 class Process:
     def __init__(self, pid, size):
