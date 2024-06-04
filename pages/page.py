@@ -39,36 +39,36 @@ class Memory:
             return True
         return False
 
-class MemoryManagerGUI:
+class MemoryManagerGUIPaging:
     def __init__(self, root):
         self.root = root
         self.root.title("Memory Management Simulator - Paging")
 
         self.total_size_label = tk.Label(root, text="Total Memory Size:")
-        self.total_size_label.pack()
+        self.total_size_label.pack(pady=(0,10))
         self.total_size_entry = tk.Entry(root)
-        self.total_size_entry.pack()
+        self.total_size_entry.pack(pady=(0,10))
 
         self.page_size_label = tk.Label(root, text="Page Size:")
-        self.page_size_label.pack()
+        self.page_size_label.pack(pady=(0,10))
         self.page_size_entry = tk.Entry(root)
-        self.page_size_entry.pack()
+        self.page_size_entry.pack(pady=(0,10))
 
         self.set_memory_button = tk.Button(root, text="Set Memory", command=self.set_memory)
-        self.set_memory_button.pack()
+        self.set_memory_button.pack(pady=(0,10))
 
         self.process_id_label = tk.Label(root, text="Process ID:")
-        self.process_id_label.pack()
+        self.process_id_label.pack(pady=(0,10))
         self.process_id_entry = tk.Entry(root)
-        self.process_id_entry.pack()
+        self.process_id_entry.pack(pady=(0,10))
         self.process_size_label = tk.Label(root, text="Process Size:")
-        self.process_size_label.pack()
+        self.process_size_label.pack(pady=(0,10))
         self.process_size_entry = tk.Entry(root)
-        self.process_size_entry.pack()
+        self.process_size_entry.pack(pady=(0,10))
         self.add_process_button = tk.Button(root, text="Add Process", command=self.add_process)
-        self.add_process_button.pack()
+        self.add_process_button.pack(pady=(0,10))
         self.remove_process_button = tk.Button(root, text="Remove Process", command=self.remove_process)
-        self.remove_process_button.pack()
+        self.remove_process_button.pack(pady=(0,10))
 
         self.memory = None
 
@@ -131,5 +131,6 @@ class MemoryManagerGUI:
 
 if __name__ == "__main__":
     root = tk.Tk()
-    app = MemoryManagerGUI(root)
+    root.geometry=("10000x600")
+    app = MemoryManagerGUIPaging(root)
     app.run()

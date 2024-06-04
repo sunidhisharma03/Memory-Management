@@ -1,6 +1,6 @@
 import tkinter as tk
 from tkinter import messagebox
-import matplotlib.pyplot as plt
+
 
 class Process:
     def __init__(self, pid, size):
@@ -62,13 +62,13 @@ class Memory:
             return True
         return False
 
-class MemoryManagerGUI:
+class MemoryManagerGUIFixed:
     def __init__(self, root):
         self.root = root
-        self.root.title("Memory Management Simulator")
+        self.root.title("Memory Management Simulator - Fixed")
 
         self.memory_type_label = tk.Label(root, text="Memory Type:")
-        self.memory_type_label.pack()
+        self.memory_type_label.pack(pady=(20,0))
         self.memory_type_var = tk.StringVar(value='equal')
         self.equal_radio = tk.Radiobutton(root, text="Equal Fixed Size Partitions", variable=self.memory_type_var, value='equal', command=self.toggle_memory_type)
         self.equal_radio.pack()
@@ -199,5 +199,6 @@ class MemoryManagerGUI:
 
 if __name__ == "__main__":
     root = tk.Tk()
-    app = MemoryManagerGUI(root)
+    root.geometry("500x700")
+    app = MemoryManagerGUIFixed(root)
     app.run()
