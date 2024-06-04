@@ -2,7 +2,7 @@ import tkinter as tk
 from pages.dynamic import MemoryManagerGUIDynamic
 from pages.fixed import MemoryManagerGUIFixed
 from pages.page import MemoryManagerGUIPaging
-from pages.buddy import MemoryManagerGUIBuddy
+from pages.buddy import Application 
 
 class MainApplication:
     def __init__(self, root):
@@ -46,10 +46,8 @@ class MainApplication:
             app_page = MemoryManagerGUIPaging(root_page)
             app_page.run()
         elif memory_type == 'buddy':
-            root_buddy = tk.Toplevel()
-            root_buddy.geometry("400x700")
-            app_buddy = MemoryManagerGUIBuddy(root_buddy)
-            app_buddy.run()
+            app_buddy = Application()  # Create an instance of the Application class
+            app_buddy.mainloop()
 
 
 if __name__ == "__main__":
