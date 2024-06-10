@@ -1,33 +1,41 @@
 import tkinter as tk
 from tkinter import messagebox
-
+import csv
+import os
 
 class Process:
     def __init__(self, pid, size):
         self.pid = pid
         self.size = size
 
-
 class Memory:
     def __init__(self, total_size):
         self.total_size = total_size
         self.free_memory = [{'start': 0, 'size': total_size}]
         self.allocated_memory = {}
+        self.initialize_csv()
 
     def add_process(self, process, strategy='first_fit'):
         if strategy == 'first_fit':
-            return self.first_fit(process)
+            success = self.first_fit(process)
         elif strategy == 'best_fit':
-            return self.best_fit(process)
+            success = self.best_fit(process)
         elif strategy == 'worst_fit':
-            return self.worst_fit(process)
-        return False
+            success = self.worst_fit(process)
+        else:
+            success = False
+
+        if success:
+            self.log_memory_state()
+
+        return success
 
     def remove_process(self, pid):
         if pid in self.allocated_memory:
             memory_block = self.allocated_memory.pop(pid)
             self.free_memory.append(memory_block)
             self.merge_free_memory()
+            self.log_memory_state()
             return True
         return False
 
@@ -86,6 +94,36 @@ class Memory:
             else:
                 i += 1
 
+    def total_free_memory(self):
+        return sum(block['size'] for block in self.free_memory)
+
+    def initialize_csv(self):
+        if not os.path.isfile('memory_log.csv'):
+            with open('memory_log.csv', 'w', newline='') as file:
+                writer = csv.writer(file)
+                writer.writerow(['Name', 'Memory'])
+
+    def log_memory_state(self):
+        total_free_memory = self.total_free_memory()
+
+        # Read existing CSV data
+        rows = []
+        with open('memory_log.csv', 'r') as file:
+            reader = csv.reader(file)
+            rows = list(reader)
+
+        # Update the row with 'dynamic'
+        for row in rows:
+            if row[0] == 'dynamic':
+                row[1] = str(total_free_memory)
+                break
+        else:
+            rows.append(['dynamic', total_free_memory])  # Add a new row if 'dynamic' was not found
+
+        # Write the updated rows back to the CSV
+        with open('memory_log.csv', 'w', newline='') as file:
+            writer = csv.writer(file)
+            writer.writerows(rows)
 
 class MemoryManagerGUIDynamic:
     def __init__(self, root):
@@ -93,7 +131,7 @@ class MemoryManagerGUIDynamic:
         self.root.title("Memory Management Simulator - Dynamic")
 
         self.total_size_label = tk.Label(root, text="Total Memory Size:")
-        self.total_size_label.pack(pady=(20,0))
+        self.total_size_label.pack(pady=(20, 0))
         self.total_size_entry = tk.Entry(root)
         self.total_size_entry.pack()
 
@@ -124,6 +162,14 @@ class MemoryManagerGUIDynamic:
         self.remove_process_button.pack()
 
         self.memory = None
+
+        self.initialize_csv()
+
+    def initialize_csv(self):
+        if not os.path.isfile('memory_log.csv'):
+            with open('memory_log.csv', 'w', newline='') as file:
+                writer = csv.writer(file)
+                writer.writerow(['Name', 'Memory'])
 
     def set_memory(self):
         try:
@@ -178,7 +224,6 @@ class MemoryManagerGUIDynamic:
         self.display_label = tk.Label(self.root, textvariable=self.display_text)
         self.display_label.pack()
         self.root.mainloop()
-
 
 if __name__ == "__main__":
     root = tk.Tk()

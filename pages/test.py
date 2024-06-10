@@ -1,7 +1,7 @@
 import tkinter as tk
 from tkinter import messagebox
-import csv
-import os
+import matplotlib.pyplot as plt
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
 class Process:
     def __init__(self, pid, size):
@@ -12,28 +12,20 @@ class Memory:
     def __init__(self, partitions):
         self.partitions = [{'start': sum(partitions[:i]), 'size': partitions[i], 'free': True} for i in range(len(partitions))]
         self.allocated_partitions = {}
-        self.initialize_csv()
 
     def add_process(self, process, strategy='first_fit'):
         if strategy == 'first_fit':
-            success = self.first_fit(process)
+            return self.first_fit(process)
         elif strategy == 'best_fit':
-            success = self.best_fit(process)
+            return self.best_fit(process)
         elif strategy == 'worst_fit':
-            success = self.worst_fit(process)
-        else:
-            success = False
-
-        if success:
-            self.log_memory_state()
-
-        return success
+            return self.worst_fit(process)
+        return False
 
     def remove_process(self, pid):
         if pid in self.allocated_partitions:
             index = self.allocated_partitions.pop(pid)
             self.partitions[index]['free'] = True
-            self.log_memory_state()
             return True
         return False
 
@@ -70,37 +62,6 @@ class Memory:
             self.partitions[worst_index]['free'] = False
             return True
         return False
-
-    def total_free_memory(self):
-        return sum(partition['size'] for partition in self.partitions if partition['free'])
-
-    def initialize_csv(self):
-        if not os.path.isfile('memory_log.csv'):
-            with open('memory_log.csv', 'w', newline='') as file:
-                writer = csv.writer(file)
-                writer.writerow(['Name', 'Memory'])
-
-    def log_memory_state(self):
-        total_free_memory = self.total_free_memory()
-        rows = []
-        updated = False
-
-        if os.path.isfile('memory_log.csv'):
-            with open('memory_log.csv', 'r', newline='') as file:
-                reader = csv.reader(file)
-                rows = list(reader)
-
-        for row in rows:
-            if row[0] == 'fixed':
-                row[1] = total_free_memory
-                updated = True
-
-        if not updated:
-            rows.append(['fixed', total_free_memory])
-
-        with open('memory_log.csv', 'w', newline='') as file:
-            writer = csv.writer(file)
-            writer.writerows(rows)
 
 class MemoryManagerGUIFixed:
     def __init__(self, root):
@@ -155,6 +116,10 @@ class MemoryManagerGUIFixed:
         self.add_process_button.pack()
         self.remove_process_button = tk.Button(root, text="Remove Process", command=self.remove_process)
         self.remove_process_button.pack()
+
+        self.fig = plt.Figure(figsize=(5, 5), dpi=100)
+        self.canvas = FigureCanvasTkAgg(self.fig, master=root)
+        self.canvas.get_tk_widget().pack()
 
         self.memory = None
 
@@ -230,6 +195,16 @@ class MemoryManagerGUIFixed:
                     free_text += f"Start Address = {partition['start']}, Size = {partition['size']}\n"
 
             self.display_text.set(allocated_text + "\n" + free_text)
+            self.update_graph()
+
+    def update_graph(self):
+        self.fig.clear()
+        ax = self.fig.add_subplot(111)
+        ax.barh(range(len(self.memory.partitions)), [p['size'] for p in self.memory.partitions], color=['red' if p['free'] else 'blue' for p in self.memory.partitions])
+        ax.set_ylabel('Partition')
+        ax.set_xlabel('Size')
+        ax.set_title('Memory Usage')
+        self.canvas.draw()
 
     def run(self):
         self.display_text = tk.StringVar()

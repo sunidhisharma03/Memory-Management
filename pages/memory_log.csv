@@ -1,0 +1,4 @@
+Name,Memory,Partition
+buddy,428,4
+dynamic,90,4
+fixed,900,8
